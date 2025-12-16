@@ -1,0 +1,90 @@
+"""
+Dataset Generation for Synchronous Machine
+-----------------------------------------
+Author: Lucas Portillo
+
+This script generates a synthetic dataset from a steady-state synchronous
+machine model. The dataset is intended for data science and machine learning
+applications applied to power systems.
+
+Inputs:
+- Terminal voltage (V)
+- Internal emf (E)
+- Load angle (delta)
+
+Outputs:
+- Active power (P)
+- Reactive power (Q)
+- Stator current magnitude (I)
+
+The resulting dataset can be used for:
+- Regression models
+- Sensitivity analysis
+- Feature engineering
+- ML benchmarking in power systems
+"""
+
+import numpy as np
+import pandas as pd
+
+from synchronous_machine_model import SynchronousMachine
+
+
+# -------------------------------------------------
+# Dataset generation
+# -------------------------------------------------
+
+def generate_dataset(machine, V_range, E_range, delta_range):
+    data = []
+
+    for V in V_range:
+        for E in E_range:
+            for delta in delta_range:
+                P = machine.electrical_power(V, E, delta)
+                Q = machine.reactive_power(V, E, delta)
+                I = machine.stator_current(V, E, delta)
+
+                data.append([
+                    V,
+                    E,
+                    np.degrees(delta),
+                    P,
+                    Q,
+                    I
+                ])
+
+    columns = [
+        "V_terminal_pu",
+        "E_internal_pu",
+        "delta_deg",
+        "P_pu",
+        "Q_pu",
+        "I_pu"
+    ]
+
+    return pd.DataFrame(data, columns=columns)
+
+
+# -------------------------------------------------
+# Main execution
+# -------------------------------------------------
+
+if __name__ == "__main__":
+    # Machine parameters
+    Xd = 1.8
+    Xq = 1.7
+
+    machine = SynchronousMachine(Xd=Xd, Xq=Xq)
+
+    # Parameter ranges
+    V_range = np.linspace(0.95, 1.05, 10)
+    E_range = np.linspace(1.0, 1.3, 10)
+    delta_range = np.linspace(0, np.pi / 2, 30)
+
+    df = generate_dataset(machine, V_range, E_range, delta_range)
+
+    # Save dataset
+    df.to_csv("synchronous_machine_dataset.csv", index=False)
+
+    print("Dataset generated successfully")
+    print(df.head())
